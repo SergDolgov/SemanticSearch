@@ -140,29 +140,58 @@ def vectorize_text(query_text):
 
 def search_by_vectors(es, index_name, query_vector):
     # Поиск ближайших соседей по вектору запроса с использованием ElasticSearch
-    query = {
-        "query": {
-            "script_score": {
-                "query": {
-                    "match_all": {}
-                },
-                "script": {
-                    "source": "cosineSimilarity(params.query_vector, 'vector') + 1.0",
-                    "params": {
-                        "query_vector": query_vector
-                    }
-                }
-            }
+    script_query = {
+        "script_score": {
+            "query": {"match_all": {}},
+            "script": {
+                "source": "cosineSimilarity(params.query_vector, doc['text_vector']) + 1.0",
+                "params": {"query_vector": query_vector},
+            },
         }
     }
+    
+    top_k = 5
+
     try: 
-        res = es.search(index=index_name, query=query)
-        vector_results = res['hits']['hits']
+        response = es.search(
+            index=index_name,
+            body={
+                "size": top_k,
+                "query": script_query,
+                "_source": {"includes": ["text", "url"]},
+            },
+        )
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))        
     
-    return vector_results
+    if response:
+        return response["hits"]["hits"]
+    return None    
+    # query = {
+    #     "query": {
+    #         "script_score": {
+    #             "query": {
+    #                 "match_all": {}
+    #             },
+    #             "script": {
+    #                 "source": "cosineSimilarity(params.query_vector, 'vector') + 1.0",
+    #                 "params": {
+    #                     "query_vector": query_vector
+    #                 }
+    #             }
+    #         }
+    #     }
+    # }
+
+    # try: 
+    #     res = es.search(index=index_name, query=query)
+    #     vector_results = res['hits']['hits']
+        
+    # except Exception as e:
+    #     raise HTTPException(status_code=500, detail=str(e))        
+    
+    # return vector_results
     
 
 
