@@ -6,6 +6,7 @@ import xml.etree.ElementTree as ET
 from elasticsearch import Elasticsearch
 from sklearn.feature_extraction.text import TfidfVectorizer
 import logging
+import joblib
 
 logger = logging.getLogger(__name__)
 
@@ -46,8 +47,29 @@ def setup_elasticsearch():
 
     es = Elasticsearch(['http://localhost:9200'])
     
+
+    mapping = {
+        "mappings": {
+            "properties": {
+                "product_name": {
+                    "type": "text" 
+                },
+                "description": {
+                    "type": "text"
+                },
+                "price": {
+                    "type": "float"
+                },
+                "vector": {
+                    "type": "dense_vector",
+                    # "dims": 768
+                }
+            }
+        }
+    }
+    
     index_name = 'products'
-    es.indices.create(index=index_name, ignore=400)
+    es.indices.create(index=index_name, body=mapping, ignore=400)
     return es, index_name
 
 # Сохранение данных в ElasticSearch
@@ -57,9 +79,12 @@ def save_data_to_elasticsearch(es, index_name, data_dict):
 
 # Создание векторов записей
 def create_vectors(data_dict):
+    
     descriptions = [data['description'] for data in data_dict.values()]
     vectorizer = TfidfVectorizer()
     vectors = vectorizer.fit_transform(descriptions).toarray()
+    joblib.dump(vectorizer, 'tfidf_vectorizer.pkl')
+    
     return vectors
 
 # Сохранение векторов в ElasticSearch
@@ -105,8 +130,7 @@ def on_startup():
     logger.info("Successfully save data to ElasticSearch")
 
 
-
-async def on_shutdown():
+def on_shutdown():
     logger.info("Shutting down API")
 
 
@@ -116,7 +140,7 @@ async def root():
     return {"message": "Hello World"}
 
 
-@app.post("/search", tags=["Search"], response_model=list[str])
+@app.post("/search", tags=["Search"], response_model=list[dict])
 async def search(query_text: str):
 
     query_vector = vectorize_text(query_text)
@@ -130,38 +154,53 @@ async def search(query_text: str):
 
 def vectorize_text(query_text):
     # Создаем экземпляр векторизатора TF-IDF
-    vectorizer = TfidfVectorizer()
+    # vectorizer = TfidfVectorizer()
+
+    vectorizer = joblib.load('tfidf_vectorizer.pkl')
 
     # Преобразуем текст запроса в вектор
-    query_vector = vectorizer.fit_transform([query_text]).toarray()[0]
+    query_vector = vectorizer.transform([query_text]).toarray()[0]
 
     return query_vector
 
 
 def search_by_vectors(es, index_name, query_vector):
+    # Поиск по цене 
+    # script_query = {
+    #     "query": {
+    #         "script": {
+    #             "script": {
+    #                 "source": "doc['price'].value > params.value",
+    #                 "params": {"value": 50}
+    #             }        
+    #         },
+    #     }
+    # }
+
     # Поиск ближайших соседей по вектору запроса с использованием ElasticSearch
-    script_query = {
-        "script_score": {
-            "query": {"match_all": {}},
-            "script": {
-                "source": "cosineSimilarity(params.query_vector, doc['text_vector']) + 1.0",
-                "params": {"query_vector": query_vector},
-            },
+    script_query =  {
+        "query": {
+            "script_score": {
+                "query": {"match_all": {}},
+                "script": {
+                    "source": "cosineSimilarity(params.queryVector, 'vector') + 1.0",
+                    "params": {"queryVector": query_vector}
+                }
+            }
         }
     }
     
     top_k = 5
-
     try: 
         response = es.search(
-            index=index_name,
-            body={
-                "size": top_k,
-                "query": script_query,
-                "_source": {"includes": ["text", "url"]},
-            },
+            index=index_name, 
+            size=top_k,
+            body=script_query,
         )
-        
+        print("Got %d Hits:" % response['hits']['total']['value'])
+        for hit in response['hits']['hits']:
+            print("%(product_name)s %(description)s: %(price)s" % hit["_source"])
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))        
     
