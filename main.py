@@ -69,7 +69,9 @@ def setup_elasticsearch():
     }
     
     index_name = 'products'
+
     es.indices.create(index=index_name, body=mapping, ignore=400)
+    
     return es, index_name
 
 # Сохранение данных в ElasticSearch
@@ -165,17 +167,6 @@ def vectorize_text(query_text):
 
 
 def search_by_vectors(es, index_name, query_vector):
-    # Поиск по цене 
-    # script_query = {
-    #     "query": {
-    #         "script": {
-    #             "script": {
-    #                 "source": "doc['price'].value > params.value",
-    #                 "params": {"value": 50}
-    #             }        
-    #         },
-    #     }
-    # }
 
     # Поиск ближайших соседей по вектору запроса с использованием ElasticSearch
     script_query =  {
@@ -207,32 +198,7 @@ def search_by_vectors(es, index_name, query_vector):
     if response:
         return response["hits"]["hits"]
     return None    
-    # query = {
-    #     "query": {
-    #         "script_score": {
-    #             "query": {
-    #                 "match_all": {}
-    #             },
-    #             "script": {
-    #                 "source": "cosineSimilarity(params.query_vector, 'vector') + 1.0",
-    #                 "params": {
-    #                     "query_vector": query_vector
-    #                 }
-    #             }
-    #         }
-    #     }
-    # }
-
-    # try: 
-    #     res = es.search(index=index_name, query=query)
-    #     vector_results = res['hits']['hits']
-        
-    # except Exception as e:
-    #     raise HTTPException(status_code=500, detail=str(e))        
     
-    # return vector_results
-    
-
 
 
 

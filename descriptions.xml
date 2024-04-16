@@ -1,1 +1,42 @@
-<descriptions><description><sku>SKU1</sku><text>Description for Product 1</text></description><description><sku>SKU2</sku><text>Description for Product 2</text></description><description><sku>SKU3</sku><text>Description for Product 3</text></description><description><sku>SKU4</sku><text>Description for Product 4</text></description><description><sku>SKU5</sku><text>Description for Product 5</text></description><description><sku>SKU6</sku><text>Description for Product 6</text></description><description><sku>SKU7</sku><text>Description for Product 7</text></description><description><sku>SKU8</sku><text>Description for Product 8</text></description><description><sku>SKU9</sku><text>Description for Product 9</text></description><description><sku>SKU10</sku><text>Description for Product 10</text></description></descriptions>
+<descriptions>
+    <description>
+        <sku>SKU1</sku>
+        <text>Звучит банально, но нужно знать, что и кому вы хотите продать. </text>
+    </description>
+    <description>
+        <sku>SKU2</sku>
+        <text>Прежде чем начать писать, ответьте на следующие вопросы</text>
+    </description>
+    <description>
+        <sku>SKU3</sku>
+        <text>чем он отличается от других в той же категории</text>
+    </description>
+    <description>
+        <sku>SKU4</sku>
+        <text>Многие описания акцентируют внимание на преимуществах ассортимента</text>
+    </description>
+    <description>
+        <sku>SKU5</sku>
+        <text>Клиент должен знать, что он получит в реальном выражении, купив данный товар.</text>
+    </description>
+    <description>
+        <sku>SKU6</sku>
+        <text>безопасно доберется до самых высоких вершин гор</text>
+    </description>
+    <description>
+        <sku>SKU7</sku>
+        <text>Description for Product 7</text>
+    </description>
+    <description>
+        <sku>SKU8</sku>
+        <text>Description for Product 8</text>
+    </description>
+    <description>
+        <sku>SKU9</sku>
+        <text>Description for Product 9</text>
+    </description>
+    <description>
+        <sku>SKU10</sku>
+        <text>Description for Product 10</text>
+    </description>
+</descriptions>
